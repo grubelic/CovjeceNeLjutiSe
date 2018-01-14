@@ -164,6 +164,9 @@ class TableDisplay(Table):
             self.display[START_FIELDS[i][0]][START_FIELDS[i][1]].config(bg = COLORS[i])
             for j in range(4):
                 self.display[HOMES[i][j][0]][HOMES[i][j][1]].config(bg = COLORS[i])
+    def celebrate(self, i, players):
+        print(players[i].name, "won")
+        return
     def addColor(self, c, exColor = None):
         if(not(exColor)):
             exColor = CELL_BG 
