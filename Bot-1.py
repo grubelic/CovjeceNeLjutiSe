@@ -20,7 +20,7 @@ def provjera_pomak(a, b, pozicije, d):
 
 
 def main(pozicije, k, boja, dopustenePozicije):
-  return dopustenePozicije[0]
+  return dopustenePozicije[-1]
   global start, cilj, qt1, qt2, qt3, qt0, bio
   spawn = start[boja]
   if boja == 0:

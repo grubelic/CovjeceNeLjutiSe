@@ -1,3 +1,4 @@
+from random import choice
 
 start = [[10, 4], [4, 0], [0, 6], [6, 10]]
 
@@ -20,7 +21,7 @@ def provjera_pomak(a, b, pozicije, d):
 
 
 def main(pozicije, k, boja, dopustenePozicije):
-  return dopustenePozicije[0]
+  return choice(dopustenePozicije)
   global start, cilj, qt1, qt2, qt3, qt0, bio
   spawn = start[boja]
   if boja == 0:
