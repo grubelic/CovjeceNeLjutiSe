@@ -14,7 +14,7 @@ WINDOW_DIMS = 660, 660
 NAMES = "MIOC"
 COLORS = ["#FF0000", "#0000FF", "#00FF00", "#FFFF00"]
 COLORS2 = ["#BB4444", "#4444BB", "#44BB44", "#BBBB22"]
-CELL_BG = "#BBBB77"
+CELL_BG = "#BBB986"
 YARDS = (((9, 0), (9, 1), (9, 2), (9, 3)),
 	 ((1, 0), (1, 1), (1, 2), (1, 3)),
          ((1, 7), (1, 8), (1, 9), (1, 10)),
@@ -25,6 +25,7 @@ HOMES = (((9, 5), (8, 5), (7, 5), (6, 5)),
 	 ((5, 9), (5, 8), (5, 7), (5, 6)))
 START_FIELDS = ((10, 4), (4, 0), (0, 6), (6, 10))
 DIRECTIONS = ((-1, 0), (0, 1), (1, 0), (0, -1))
+ALL_DISQUALIFIED = 8
 
 class Window(tk.Frame):
     def __init__(self, *args, **kwargs):
@@ -33,7 +34,7 @@ class Window(tk.Frame):
         diceImages = [tk.PhotoImage(file = str(i+1)+".png") for i in range(6)]
         emptyImage = tk.PhotoImage()
         self.master.geometry("x".join((str(WINDOW_DIMS[0]), str(WINDOW_DIMS[1]))))
-        self.master.resizable = (False, False)
+        self.master.resizable(False, False)
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1]) 
         self.menuView = MenuView(self)
 class MenuView(tk.Frame):
@@ -52,24 +53,31 @@ class GameView(tk.Frame):
         if(not(self.importBots())):
             self.master.destroy()
             return
-        self.bind("<Button - 1>", lambda x: self.destroy())
+        self.bind("<BackSpace>", lambda x: self.destroy())
         self.table = tableClass(self, self.botNames)
         self.players = [Player(i, self.botNames[i], self.bots[i]) for i in range(4)]
         self.gameThread = Thread(target = self.gameFunction)
         self.gameThread.start()
+        self.focus_set()
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
-        self.master.bind("<BackSpace>", lambda x: print("razmem"))
     def gameFunction(self, numberOfGames = MAX_NUM):
         try:
             for i in range(numberOfGames):
                 self.setTableUp()
                 currentPlayerIndex = self.table.getFirst()
+                disqualified = 0
                 while True:
                     currentPlayerIndex %= 4
                     currentPlayer = self.players[currentPlayerIndex]
+                    if (currentPlayer.disqualified):
+                        disqualified += 1
+                        if(disqualified == 4):
+                            self.table.celebrate(ALL_DISQUALIFIED, self.players)
+                            break
+                    else:
+                        disqualified = 0
                     dice = self.table.throwDice(currentPlayerIndex)
                     currentPlayer.thrown()
-                    #print()
                     ap = currentPlayer.getAvailablePieces(dice)
                     if len(ap):
                         data = []
@@ -79,9 +87,10 @@ class GameView(tk.Frame):
                                 data[i].append([])
                                 for k in range(2): data[i][j].append(self.players[i].pieces[j].coordinates[k])
                         pieceCoordinates = tuple(currentPlayer.main(data, dice, currentPlayerIndex, ap))
-                        if not(pieceCoordinates in ap):
-                            dice = 0
+                        if not((type(pieceCoordinates) is list or type(pieceCoordinates) is tuple) and tuple(pieceCoordinates) in ap):
+                            self.table.disqualify(currentPlayer)
                             print(ap, pieceCoordinates, "Bravo, cestitam!")
+                            sleep(10)
                         self.table.movePiece(currentPlayer, pieceCoordinates, dice)
                         if currentPlayer.won:
                             self.table.celebrate(currentPlayerIndex, self.players)
@@ -128,6 +137,10 @@ class Table(object):
         self.matrix[piece.coordinates[0]][piece.coordinates[1]] = piece
     def removePiece(self, piece):
         self.matrix[piece.coordinates[0]][piece.coordinates[1]] = "."
+    def disqualify(player):
+        player.disqualified = True
+        for piece in player.pieces:
+            self.toYard(piece)
     def toYard(self, piece):
         self.removePiece(piece)
         piece.player.moveToYard(piece)
@@ -183,30 +196,28 @@ class TableDisplay(Table):
     def removePiece(self, piece):
         super(TableDisplay, self).removePiece(piece)
         self.addColor(piece.coordinates)
-    def moveAnimation(self, dice, i, exColor, pC, piece, p):
-        if(i == dice or pC in YARDS[p.color]): return
-        self.addColor(piece.coordinates, exColor)
-        nC = piece.newCoordinates(i+1)
-        exColor = self.addColor(nC, exColor)
-        prozor.update()
-        self.master.after(500, self.moveAnimation, dice, i+1, exColor, pC, piece, p)
     def movePiece(self, p, pC, dice):
         piece = self.matrix[pC[0]][pC[1]]
-        '''
-        exColor = None
-        self.master.after(500, self.moveAnimation, dice, 1, None, pC, piece, p)
-        for i in range(dice):
-            if(pC in YARDS[p.color]): break
-            self.addColor(piece.coordinates, exColor)
-            nC = piece.newCoordinates(i+1)
-            exColor = self.addColor(nC, exColor)
-        '''
+        if(not pC in YARDS[p.color]):
+            exColor = None
+            for i in range(dice):
+                self.addColor(piece.newCoordinates(i), exColor)
+                nC = piece.newCoordinates(i + 1)
+                exColor = self.addColor(nC, piece.colorHex)
+                sleep(.5)
         nC = piece.newCoordinates(dice)
         if(type(self.matrix[nC[0]][nC[1]]) is Piece):
             self.toYard(self.matrix[nC[0]][nC[1]])
         self.removePiece(piece)
         p.moveTo(piece, nC, dice)
         self.addPiece(piece)
+        a = 0
+        for i in self.matrix:
+            for j in i:
+                if(type(j) is Piece):
+                    a += 1
+        if(a > 16):
+            print("Warning")
         sleep(.5)
     def throwDice(self, color):
         number = super(TableDisplay, self).throwDice(color)
@@ -222,8 +233,8 @@ class TableDisplay(Table):
             for i in pictureLabels:
                 i.config(bd = 0, image = emptyImage)
                 i.grid(padx = 3, pady = 3)
-        self.neWindow = tk.Toplevel(self.master)
-        textLabels = [tk.Label(self.neWindow, text = self.master.players[i].name, width = 20, fg = COLORS[i]) for i in range(4)]
+        self.neWindow = tk.Toplevel(self.master, bg = CELL_BG)
+        textLabels = [tk.Label(self.neWindow, text = self.master.players[i].name, width = 20, fg = COLORS2[i], bg = CELL_BG) for i in range(4)]
         pictureLabels = [tk.Label(self.neWindow,
                                   image = emptyImage,
                                   width = 60,
@@ -232,8 +243,8 @@ class TableDisplay(Table):
                                   bd = 0,
                                   relief = tk.SOLID) for i in range(4)]
         for i in range(4):
-            textLabels[i].grid(row = i//2, column = (i%2)*2)
-            pictureLabels[i].grid(row = i // 2, column = (i%2)*2+1, padx = 3, pady = 3)
+            textLabels[i].grid(row =  int(abs(-i + 1.5) - 0.5), column = (i//2)*3)
+            pictureLabels[i].grid(row = int(abs(-i + 1.5) - 0.5), column = (i//2)+1, padx = 3, pady = 3)
         while True:
             sleep(1)
             values = []
@@ -283,7 +294,8 @@ class TableStats(Table):
             self.lineIds[i] = self.infoCanvas.create_line(*tuple(self.lc[i]), fill = COLORS[i], width = 2)
         
     def celebrate(self, cpi, players):
-        players[cpi].numberOfWins += 1
+        if(cpi != ALL_DISQUALIFIED):
+            players[cpi].numberOfWins += 1
         if(not(self.numberOfGames%(MAX_NUM//500))):
             self.upDate(players)
         self.numberOfGames += 1
@@ -294,6 +306,7 @@ class Player(object):
     def __init__(self, color, name, module):
         self.numberOfWins = 0
         self.name = name
+        self.disqualified = False
         self.won = False
         self.main = module.main
         self.colorHex = COLORS2[color]
