@@ -1,9 +1,11 @@
 import tkinter as tk
+from tkinter import filedialog
 import os
 from threading import Thread
 from time import sleep
 from random import randint
 from _tkinter import TclError
+from sys import version_info
 #dodati dozvoljene figure na kraj
 #promijeniti layout yardova da budu 2x2
 
@@ -14,6 +16,8 @@ WINDOW_DIMS = 660, 660
 NAMES = "MIOC"
 COLORS = ["#FF0000", "#0000FF", "#00FF00", "#FFFF00"]
 COLORS2 = ["#BB4444", "#4444BB", "#44BB44", "#BBBB22"]
+COLOR_NAMES = ["red", "blue", "green", "yellow"]
+COLORS = COLORS2 #Proba
 CELL_BG = "#BBB986"
 YARDS = (((9, 0), (9, 1), (9, 2), (9, 3)),
 	 ((1, 0), (1, 1), (1, 2), (1, 3)),
@@ -31,29 +35,79 @@ class Window(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
         global emptyImage, diceImages
-        diceImages = [tk.PhotoImage(file = str(i+1)+".png") for i in range(6)]
+        diceImages = [tk.PhotoImage(file = "dice/"+str(i+1)+".png") for i in range(6)]
         emptyImage = tk.PhotoImage()
         self.master.geometry("x".join((str(WINDOW_DIMS[0]), str(WINDOW_DIMS[1]))))
         self.master.resizable(False, False)
-        self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1]) 
-        self.menuView = MenuView(self)
-class MenuView(tk.Frame):
+        self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
+        self.sbView = SelectBotView(self)
+        #self.menuView = MenuView(self)
+class SelectBotView(tk.Frame):
     def __init__(self, master):
+        tk.Frame.__init__(self, master, bg = CELL_BG)
+        self.quarters = []
+        for i in range(4):
+            self.quarters.append(Quarter(self, i))
+        self.playButton = tk.Button(self, text = "PLAY", bg = "white", highlightthickness = 0, bd = 0)
+        self.playButton.bind("<1>", self.play)
+        self.playButton.place(x = WINDOW_DIMS[0]//2, y = WINDOW_DIMS[1]//2, anchor = tk.CENTER)
+        self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
+    def play(self, event):
+        bots = []
+        botNames = []
+        for i in range(4):
+            bots.append(self.quarters[i].returnValues["bot"])
+            botNames.append(self.quarters[i].returnValues["botName"])
+        if(None in bots):
+            print("Select bots")
+            return
+        self.menuView = MenuView(self.master, bots, botNames)
+        self.destroy()
+class Quarter(tk.Frame):
+    def __init__(self, master, color):
+        tk.Frame.__init__(self, master, bg = COLORS[color], width = WINDOW_DIMS[0]//2, height = WINDOW_DIMS[1]//2)
+        self.returnValues = dict(botName = "Player "+COLOR_NAMES[color]+" [HUMAN]", bot = None)
+        self.color = color
+        self.options = tuple([i[:-3] for i in os.listdir('.') if (i.endswith(".py") and i != MY_NAME)])
+        if(self.options):
+            self.selectOption(self.options[0])
+        self.var = tk.StringVar()
+        self.var.set(self.options[0])
+        self.OM = tk.OptionMenu(self, self.var, *self.options, command = self.selectOption)
+        self.OM.config(bg = COLORS[color], highlightthickness = 0, anchor = tk.W, width = 15)
+        self.OM.pack(pady = (20, 20))
+        if(version_info[0] == 3 and version_info[1] > 4):
+            self.browseButton = tk.Button(self, bg =COLORS[color], text = "Browse", anchor = tk.W, command = self.browse, width = 17)
+            self.browseButton.pack()
+        self.place(x = color//2 * WINDOW_DIMS[1]//2, y = int(abs(-color + 1.5) - 0.5) * WINDOW_DIMS[0]//2, width = WINDOW_DIMS[0]//2, height = WINDOW_DIMS[1]//2)
+    def browse(self):
+        path = filedialog.askopenfilename(defaultextension = ".py", filetypes = [("Python Script", "*.py")])
+        if(path):
+            from importlib import util
+            self.returnValues["botName"] = path.split("/")[-1][:-3]
+            spec = util.spec_from_file_location(self.returnValues["botName"], path)
+            self.returnValues["bot"] = util.module_from_spec(spec)
+            spec.loader.exec_module(self.returnValues["bot"])
+            self.var.set(self.returnValues["botName"])
+    def selectOption(self, var):
+        self.returnValues["botName"] = var
+        self.returnValues["bot"] = __import__(var)
+class MenuView(tk.Frame):
+    def __init__(self, master, bots, botNames):
         tk.Frame.__init__(self, master, bg = CELL_BG)
         classes = [("Show Stats", TableStats), ("Display Board", TableDisplay)]
         buttons = []
         for i in range(2):
             buttons.append(tk.Button(self, text = classes[i][0]))
             buttons[i].pack()
-            buttons[i].bind("<Button-1>", lambda x: GameView(self, classes[buttons.index(x.widget)][1]))
+            buttons[i].bind("<Button-1>", lambda x: GameView(self, classes[buttons.index(x.widget)][1], bots, botNames))
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1]) 
 class GameView(tk.Frame):
-    def __init__(self, master, tableClass):
+    def __init__(self, master, tableClass, bots, botNames):
         tk.Frame.__init__(self, master, bg = CELL_BG)
-        if(not(self.importBots())):
-            self.master.destroy()
-            return
         self.bind("<BackSpace>", lambda x: self.destroy())
+        self.bots = bots
+        self.botNames = botNames
         self.table = tableClass(self, self.botNames)
         self.players = [Player(i, self.botNames[i], self.bots[i]) for i in range(4)]
         self.gameThread = Thread(target = self.gameFunction)
@@ -103,17 +157,6 @@ class GameView(tk.Frame):
         for player in self.players:
             for piece in player.pieces:
                 self.table.toYard(piece)
-    def importBots(self):
-        self.botNames = [i[:-3] for i in os.listdir('.') if (i.endswith(".py") and i != MY_NAME)]
-        self.bots = [__import__(j) for i, j in enumerate(self.botNames) if i < 4]
-        if(len(self.bots)):
-            for i in range(4 - len(self.bots)):
-                self.bots.append(self.bots[0])
-                self.botNames.append(self.botNames[0])
-            return 1
-        else:
-            print("Please add bots in this directory. (" + os.path.dirname(__file__) + ")")
-            return 0
         
 class Table(object):
     def __init__(self, master):
@@ -157,6 +200,11 @@ class Table(object):
 class TableDisplay(Table):
     def __init__(self, master, names):
         Table.__init__(self, master)
+        self.piecePic = []
+        for i in range(4):
+            self.piecePic.append([])
+            for j in range(4):
+                self.piecePic[i].append(tk.PhotoImage(file = "pieces/"+str(i)+str(j)+".png"))
         self.master = master
         self.display = []
         for i in range(11):
@@ -182,17 +230,13 @@ class TableDisplay(Table):
         return
     def addColor(self, c, exColor = None):
         if(not(exColor)):
-            exColor = CELL_BG 
-            for i in range(4):
-                if c in HOMES[i] or c == START_FIELDS[i]:
-                    exColor = COLORS[i]
-                    break
-        returnValue = self.display[c[0]][c[1]].cget("bg")
-        self.display[c[0]][c[1]].config(bg = exColor)
+            exColor = emptyImage
+        returnValue = self.display[c[0]][c[1]].cget("image")
+        self.display[c[0]][c[1]].config(image = exColor)
         return returnValue
     def addPiece(self, piece):
         super(TableDisplay, self).addPiece(piece)
-        self.addColor(piece.coordinates, piece.colorHex)
+        self.addColor(piece.coordinates, self.piecePic[piece.color][piece.number])
     def removePiece(self, piece):
         super(TableDisplay, self).removePiece(piece)
         self.addColor(piece.coordinates)
@@ -203,7 +247,7 @@ class TableDisplay(Table):
             for i in range(dice):
                 self.addColor(piece.newCoordinates(i), exColor)
                 nC = piece.newCoordinates(i + 1)
-                exColor = self.addColor(nC, piece.colorHex)
+                exColor = self.addColor(nC, self.piecePic[piece.color][piece.number])
                 sleep(.5)
         nC = piece.newCoordinates(dice)
         if(type(self.matrix[nC[0]][nC[1]]) is Piece):
@@ -330,7 +374,7 @@ class Player(object):
     def moveToYard(self, piece):
         self.won = False
         piece.setCoordinates(YARDS[self.color][piece.number])
-        if(self.allPiecesIn(YARDS[self.color])): throwsRemaining = 3
+        if(self.allPiecesIn(YARDS[self.color])): self.throwsRemaining = 3
     def thrown(self):
         self.throwsRemaining -= 1
     def moveTo(self, piece, coordinates, dice):
