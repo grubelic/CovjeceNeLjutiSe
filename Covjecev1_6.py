@@ -19,13 +19,13 @@ BUTTON_TXT_WIDTH = 20
 CELL_BG = "#BBB986"
 ACCENT_COLOR = "#AAA875"
 YARDS = (((9, 0), (9, 1), (9, 2), (9, 3)),
-	 ((1, 0), (1, 1), (1, 2), (1, 3)),
+         ((1, 0), (1, 1), (1, 2), (1, 3)),
          ((1, 7), (1, 8), (1, 9), (1, 10)),
          ((9, 7), (9, 8), (9, 9), (9, 10)))
 HOMES = (((9, 5), (8, 5), (7, 5), (6, 5)),
-	 ((5, 1), (5, 2), (5, 3), (5, 4)),
-	 ((1, 5), (2, 5), (3, 5), (4, 5)),
-	 ((5, 9), (5, 8), (5, 7), (5, 6)))
+         ((5, 1), (5, 2), (5, 3), (5, 4)),
+         ((1, 5), (2, 5), (3, 5), (4, 5)),
+         ((5, 9), (5, 8), (5, 7), (5, 6)))
 START_FIELDS = ((10, 4), (4, 0), (0, 6), (6, 10))
 DIRECTIONS = ((-1, 0), (0, 1), (1, 0), (0, -1))
 ALL_DISQUALIFIED = 8
@@ -40,6 +40,8 @@ class Window(tk.Frame):
         emptyImage = tk.PhotoImage()
         self.master.geometry("x".join((str(WINDOW_DIMS[0]), str(WINDOW_DIMS[1]))))
         self.master.resizable(False, False)
+        self.master.title("Covjece ne ljuti se")
+        self.master.iconbitmap("icon.ico")
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
         self.sbView = SelectBotView(self)
         #self.menuView = MenuView(self)
@@ -97,7 +99,7 @@ class MenuView(tk.Frame):
         tk.Frame.__init__(self, master, bg = CELL_BG)
         classes = [("Show Stats", TableStats), ("Display Board", TableDisplay)]
         buttons = []
-        self.bind("<BackSpace>", lambda x: self.destroy()) #urediti navigaciju (ne dobiva focus kad se napravi GameView, pa vise ne ide nazad)
+        self.bind("<BackSpace>", lambda x: self.destroy())
         self.focus_set()
         for i in range(2):
             buttons.append(tk.Button(self, text = classes[i][0], bg = ACCENT_COLOR, width = BUTTON_TXT_WIDTH))
@@ -157,7 +159,10 @@ class GameView(tk.Frame):
                             data.append([])
                             for j in range(4):
                                 data[i].append(self.players[i].pieces[j].position)
-                        pieceName = currentPlayer.main(data, dice, currentPlayerIndex, ap)
+                        try:
+                            pieceName = currentPlayer.main(data, dice, currentPlayerIndex, ap)
+                        except Exception as e:
+                            pieceName = type(e).__name__
                         if not(type(pieceName) is str and pieceName in ap):
                             self.table.disqualify(currentPlayer)
                             print("\n\nDice:", dice, "Legit outputs:", ap, "Your output:", pieceName)
@@ -171,7 +176,8 @@ class GameView(tk.Frame):
                     if currentPlayer.getThrowsRemaining(): continue
                     currentPlayerIndex = (currentPlayerIndex + 1)%4
             print(time() - startTime)
-            msg = "\n".join([" ".join((str(i.name),  "(" + COLOR_NAMES[i.color] + "):", str(i.numberOfWins))) for i in self.players])
+            l = sorted([(i.name, COLOR_NAMES[i.color], i.numberOfWins) for i in self.players], key = lambda x: int(x[2]), reverse = True)
+            msg = "\n\n".join([" ".join((str(l[i][0]),  "(" + l[i][1] + "):", str(l[i][2]))) for i in range(4)])
             messagebox.showinfo("Game Over", msg)
             for i in self.players:
                 print(i.name + ":", i.numberOfWins, end = " ")
@@ -296,13 +302,6 @@ class TableDisplay(Table):
         self.removePiece(piece)
         p.moveTo(piece, nC, dice)
         self.addPiece(piece)
-        a = 0
-        for i in self.matrix:
-            for j in i:
-                if(type(j) is Piece):
-                    a += 1
-        if(a > 16):
-            print("Warning")
         sleep(speed * 0.5)
     def throwDice(self, color):
         number = super(TableDisplay, self).throwDice(color)
@@ -319,6 +318,9 @@ class TableDisplay(Table):
                 i.config(bd = 0, image = emptyImage)
                 i.grid(padx = 3, pady = 3)
         self.neWindow = tk.Toplevel(self.master, bg = CELL_BG)
+        self.neWindow.resizable(False, False)
+        self.neWindow.title("First to play")
+        self.neWindow.iconbitmap("icon.ico")
         textLabels = [tk.Label(self.neWindow, text = self.master.players[i].name, width = 20, fg = COLORS2[i], bg = CELL_BG) for i in range(4)]
         pictureLabels = [tk.Label(self.neWindow,
                                   image = emptyImage,
@@ -356,7 +358,7 @@ class TableStats(Table):
         self.master = master
         self.infoCanvas = tk.Canvas(master, width = TableStats.cw, height = TableStats.ch)
         self.numberOfGames = 0
-        self.infoLabel = tk.Label(master, text = "Stats")
+        self.infoLabel = tk.Label(master, text = "Wins")
         self.infoLabel.place(x = WINDOW_DIMS[0]//2, y = 50, anchor = tk.N)
         self.lc = []
         for i in range(4): self.lc.append([(0, TableStats.ch),(1, TableStats.ch - 1)])
@@ -381,7 +383,7 @@ class TableStats(Table):
         self.numberOfGames += 1
         if(cpi != ALL_DISQUALIFIED):
             players[cpi].numberOfWins += 1
-        if(self.numberOfGames*500/maxNum-int(self.numberOfGames*500/maxNum) < 500/maxNum):
+        if(self.numberOfGames*500/maxNum-int(self.numberOfGames*500/maxNum) < 500/maxNum-1/100000):
             self.upDate(players)
                 
         
