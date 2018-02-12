@@ -6,7 +6,7 @@ PROGRESS = 1
 DEFENSIVE = 1
 OFFENSIVE = 1
 DISTANCE = 1
-FIRST_COLOR = 2
+FIRST_COLOR = 0
 def convertPosition(position, color, relativeTo): #iz sustava color u relativeTo
     return (position - 1 + (color - relativeTo + 4)*10)%40+1
 def dist(c1, p1, c2, p2):
@@ -63,11 +63,9 @@ def movable(p, c, index, k):
         return False
     return True
 def main(positions, dice, color, output):
-    '''
     for i in range(4):
         if movable(positions, color, i, dice) and not("MIOC"[i] in output):
             print(positions, dice, color, output, sep = "\n")
-            '''
     #print()
     maxV = -INFINITE
     maxI = output[-1]
