@@ -11,23 +11,23 @@ from sys import version_info
 MY_NAME = "Covjecev1_6.py"
 WINDOW_DIMS = 660, 660
 NAMES = "MIOC"
-COLORS2 = ["#FF0000", "#0000FF", "#00FF00", "#FFFF00"]
-COLORS = ["#BB4444", "#4444BB", "#44BB44", "#BBBB44"]
-COLOR_NAMES = ["red", "blue", "green", "yellow"]
+COLORS2 = ["#00FF00", "#FFFF00", "#FF0000", "#0000FF"]
+COLORS = ["#44BB44", "#BBBB44", "#BB4444", "#4444BB"]
+COLOR_NAMES = ["green", "yellow", "red", "blue"]
 BUTTON_TXT_WIDTH = 20
 #COLORS = COLORS2 #Proba
 CELL_BG = "#BBB986"
 ACCENT_COLOR = "#AAA875"
-YARDS = (((9, 0), (9, 1), (9, 2), (9, 3)),
-         ((1, 0), (1, 1), (1, 2), (1, 3)),
-         ((1, 7), (1, 8), (1, 9), (1, 10)),
-         ((9, 7), (9, 8), (9, 9), (9, 10)))
-HOMES = (((9, 5), (8, 5), (7, 5), (6, 5)),
-         ((5, 1), (5, 2), (5, 3), (5, 4)),
-         ((1, 5), (2, 5), (3, 5), (4, 5)),
-         ((5, 9), (5, 8), (5, 7), (5, 6)))
-START_FIELDS = ((10, 4), (4, 0), (0, 6), (6, 10))
-DIRECTIONS = ((-1, 0), (0, 1), (1, 0), (0, -1))
+YARDS = (((1, 7), (1, 8), (1, 9), (1, 10)),
+         ((9, 7), (9, 8), (9, 9), (9, 10)),
+         ((9, 0), (9, 1), (9, 2), (9, 3)),
+         ((1, 0), (1, 1), (1, 2), (1, 3)))
+HOMES = (((1, 5), (2, 5), (3, 5), (4, 5)),
+         ((5, 9), (5, 8), (5, 7), (5, 6)),
+         ((9, 5), (8, 5), (7, 5), (6, 5)),
+         ((5, 1), (5, 2), (5, 3), (5, 4)))
+START_FIELDS = ((0, 6), (6, 10), (10, 4), (4, 0))
+DIRECTIONS = ((1, 0), (0, -1), (-1, 0), (0, 1))
 ALL_DISQUALIFIED = 8
 speed = 0.402
 maxNum = 5000
@@ -81,7 +81,7 @@ class Quarter(tk.Frame):
         if(version_info[0] == 3 and version_info[1] > 4):
             self.browseButton = tk.Button(self, bg =COLORS[color], text = "Browse", anchor = tk.W, command = self.browse, width = 17)
             self.browseButton.pack()
-        self.place(x = color//2 * WINDOW_DIMS[0]//2, y = int(abs(-color + 1.5) - 0.5) * WINDOW_DIMS[1]//2, width = WINDOW_DIMS[0]//2, height = WINDOW_DIMS[1]//2)
+        self.place(x = (1-color//2) * WINDOW_DIMS[0]//2, y = int(1.5 - abs(-color + 1.5)) * WINDOW_DIMS[1]//2, width = WINDOW_DIMS[0]//2, height = WINDOW_DIMS[1]//2)
     def browse(self):
         path = filedialog.askopenfilename(defaultextension = ".py", filetypes = [("Python Script", "*.py")])
         if(path):
@@ -261,10 +261,10 @@ class TableDisplay(Table):
                                                 width = 60-2*(self.matrix[i][j]=="."),
                                                 height = 60-2*(self.matrix[i][j]==".")))
                 self.display[i][j].grid(row = i, column = j)
-        s = [tk.SW, tk.NW, tk.NE, tk.SE]
+        s = [tk.NE, tk.SE, tk.SW, tk.NW]
         for i in range(4):
             l = tk.Label(master, text = names[i], bg = CELL_BG, fg = COLORS2[i], highlightthickness = 0)
-            l.place(x = i//2 * WINDOW_DIMS[0], y = int(abs(-i + 1.5) - 0.5) * WINDOW_DIMS[1], anchor = s[i])
+            l.place(x = (1-i//2) * WINDOW_DIMS[0], y = int(1.5 - abs(-i + 1.5)) * WINDOW_DIMS[1], anchor = s[i])
             self.display[START_FIELDS[i][0]][START_FIELDS[i][1]].config(bg = COLORS[i])
             for j in range(4):
                 self.display[HOMES[i][j][0]][HOMES[i][j][1]].config(bg = COLORS[i])
@@ -305,8 +305,8 @@ class TableDisplay(Table):
         sleep(speed * 0.5)
     def throwDice(self, color):
         number = super(TableDisplay, self).throwDice(color)
-        r = 2 + 6 * (color in (0, 3))
-        s = 2 + 6 * (color // 2)
+        r = 11 - abs(6 * color - 9)
+        s = 8 - 6 * (color // 2)
         self.display[r][s].config(image = diceImages[number-1])
         sleep(speed * 0.5)
         self.display[r][s].config(image = emptyImage)
@@ -330,8 +330,8 @@ class TableDisplay(Table):
                                   bd = 0,
                                   relief = tk.SOLID) for i in range(4)]
         for i in range(4):
-            textLabels[i].grid(row =  int(abs(-i + 1.5) - 0.5), column = (i//2)*3)
-            pictureLabels[i].grid(row = int(abs(-i + 1.5) - 0.5), column = (i//2)+1, padx = 3, pady = 3)
+            textLabels[i].grid(row =  int(1.5 - abs(-i + 1.5)), column = (1-i//2)*3)
+            pictureLabels[i].grid(row = int(1.5 - abs(-i + 1.5)), column = (1-i//2)+1, padx = 3, pady = 3)
         while True:
             sleep(speed*1)
             values = []
@@ -472,7 +472,7 @@ class Piece(object):
             if(self.pathPosition > 40):
                 self.position = 40 - self.pathPosition
             else:
-                self.position = (self.pathPosition-1+((self.color+2)%4)*10)%40+1
+                self.position = (self.pathPosition - 1 + (self.color + 4)*10)%40+1
     def newCoordinates(self, dice):
         if(dice == 6 and self.coordinates in YARDS[self.color]):
             return(START_FIELDS[self.color])
