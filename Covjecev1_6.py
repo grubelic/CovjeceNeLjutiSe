@@ -164,9 +164,9 @@ class GameView(tk.Frame):
                         except Exception as e:
                             pieceName = type(e).__name__
                         if not(type(pieceName) is str and pieceName in ap):
+                            self.table.printTable()
                             self.table.disqualify(currentPlayer)
                             print("\n\nDice:", dice, "Legit outputs:", ap, "Your output:", pieceName)
-                            self.table.printTable()
                             currentPlayerIndex = (currentPlayerIndex + 1)%4
                             continue
                         self.table.movePiece(currentPlayer, self.players[currentPlayerIndex].pieces[NAMES.index(pieceName)].coordinates, dice)
