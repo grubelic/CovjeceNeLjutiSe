@@ -163,10 +163,11 @@ class GameView(tk.Frame):
                             pieceName = currentPlayer.main(data, dice, currentPlayerIndex, ap)
                         except Exception as e:
                             pieceName = type(e).__name__
-                        if not(type(pieceName) is str and pieceName in ap):
+                        if not(type(pieceName) is str and pieceName in ap and len(pieceName) == 1):
+                            print("\n\nColor:", COLOR_NAMES[currentPlayerIndex], "\nDice:", dice, "\nLegit outputs:", ap, "\nYour output:", pieceName)
                             self.table.printTable()
+                            input("\nThe bot will be disqualified, game is going on, press enter.")
                             self.table.disqualify(currentPlayer)
-                            print("\n\nDice:", dice, "Legit outputs:", ap, "Your output:", pieceName)
                             currentPlayerIndex = (currentPlayerIndex + 1)%4
                             continue
                         self.table.movePiece(currentPlayer, self.players[currentPlayerIndex].pieces[NAMES.index(pieceName)].coordinates, dice)
@@ -200,11 +201,11 @@ class Table(object):
             if not i or i == 10:
                 self.matrix += [[" "]*4+["."]*3+[" "]*4]
             elif i < 4 or i < 10 and i > 6:
-                self.matrix += [[" "]*4+["."]+["-"]+["."]+[" "]*4]
+                self.matrix += [[" "]*4+["."]+["."]+["."]+[" "]*4]
             elif i%2:
-                self.matrix += [["."]+["-"]*4+[" "]+["-"]*4+["."]]
+                self.matrix += [["."]+["."]*4+[" "]+["."]*4+["."]]
             else:
-                self.matrix += [["."]*5+["-"]+["."]*5]
+                self.matrix += [["."]*5+["."]+["."]*5]
     def throwDice(self, color):
         return randint(1, 6)
     def getFirst(self):
