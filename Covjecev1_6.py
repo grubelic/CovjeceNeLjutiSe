@@ -41,10 +41,9 @@ class Window(tk.Frame):
         self.master.geometry("x".join((str(WINDOW_DIMS[0]), str(WINDOW_DIMS[1]))))
         self.master.resizable(False, False)
         self.master.title("Covjece ne ljuti se")
-        self.master.iconbitmap("icon.ico")
+        if (os.name == "nt"): self.master.iconbitmap("icon.ico")
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
         self.sbView = SelectBotView(self)
-        #self.menuView = MenuView(self)
 class SelectBotView(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master, bg = CELL_BG)
@@ -134,8 +133,12 @@ class GameView(tk.Frame):
         self.place(x = 0, y = 0, width = WINDOW_DIMS[0], height = WINDOW_DIMS[1])
     def gameFunction(self):
         try:
+            global stopPlaying
+            stopPlaying = False
             startTime = time()
-            for i in range(maxNum):
+            for j in range(maxNum):
+                if(stopPlaying):
+                    return
                 self.setTableUp()
                 currentPlayerIndex = self.table.getFirst()
                 disqualified = 0
@@ -166,7 +169,7 @@ class GameView(tk.Frame):
                         if not(type(pieceName) is str and pieceName in ap and len(pieceName) == 1):
                             print("\n\nColor:", COLOR_NAMES[currentPlayerIndex], "\nDice:", dice, "\nLegit outputs:", ap, "\nYour output:", pieceName)
                             self.table.printTable()
-                            input("\nThe bot will be disqualified, game is going on, press enter.")
+                            sleep(1)
                             self.table.disqualify(currentPlayer)
                             currentPlayerIndex = (currentPlayerIndex + 1)%4
                             continue
@@ -192,6 +195,8 @@ class GameView(tk.Frame):
                 self.table.toYard(piece)
     def onClose(self, event):
         self.master.focus_set()
+        global stopPlaying
+        stopPlaying = True
         self.destroy()
         
 class Table(object):
@@ -321,7 +326,7 @@ class TableDisplay(Table):
         self.neWindow = tk.Toplevel(self.master, bg = CELL_BG)
         self.neWindow.resizable(False, False)
         self.neWindow.title("First to play")
-        self.neWindow.iconbitmap("icon.ico")
+        if (os.name == "nt"): self.neWindow.iconbitmap("icon.ico")
         textLabels = [tk.Label(self.neWindow, text = self.master.players[i].name, width = 20, fg = COLORS2[i], bg = CELL_BG) for i in range(4)]
         pictureLabels = [tk.Label(self.neWindow,
                                   image = emptyImage,
@@ -370,7 +375,7 @@ class TableStats(Table):
         self.progressBar.place(x = (WINDOW_DIMS[0]-TableStats.cw)//2, y = 55+TableStats.ch, anchor = tk.NW, width = 0, height = 20)
         self.nameLabels = [tk.Label(master, text = names[i], bg = CELL_BG)  for i in range(4)]
         for i in range(4):
-            self.nameLabels[i].place(x = (WINDOW_DIMS[0]//5)*(i+1), y = WINDOW_DIMS[1] - 49, anchor = tk.N, width = 60)
+            self.nameLabels[i].place(x = (WINDOW_DIMS[0]//5)*(i+1), y = WINDOW_DIMS[1] - 49, anchor = tk.N, width = WINDOW_DIMS[0]//5)
             self.lineIds.append(self.infoCanvas.create_line(*tuple(self.lc[i]), fill = COLORS[i], width = 2))
             self.percentageL[i].place(x = (WINDOW_DIMS[0]//5)*(i+1), y = WINDOW_DIMS[1] - 50, anchor = tk.S, width = 80, height = 0)
     def upDate(self, players):
