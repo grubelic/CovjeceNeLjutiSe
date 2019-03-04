@@ -1,4 +1,4 @@
-Ludo|Mensch ärgere Dich nicht
+Ludo|Mensch, Ã¤rgere Dich nicht
 Main Menu|Main Menu
 Play|Play
 Info|Info
@@ -10,7 +10,7 @@ lang|Language
 mod|MIOC mod
 pp|Player positioning
 gpm|Games per match
-pfp|Points for position
+pfp|Points for position (#1 to #4)
 hr|Croatian
 en|English
 Balanced|Balanced
