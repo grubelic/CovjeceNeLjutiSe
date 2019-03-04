@@ -5,7 +5,7 @@ from time import sleep, time, strftime
 from tkinter import font, filedialog
 from _tkinter import TclError
 from platform import python_version
-from os import listdir
+from os import listdir, name
 from random import shuffle
 from threading import Thread
 from math import log2
@@ -38,7 +38,7 @@ COLOURS = dict(bg = "#BABABA",
                ma = "#00797C",
                la = "#00B9C3",
                da = "#284141")
-               
+
 FONTS = dict(smaller = ("Arial Black", 10, "bold"),
              small = ("Arial Black", 16),
              medium = ("Arial Black", 20),
@@ -77,7 +77,11 @@ class ProgressBar(tk.Frame):
 #Buttons on ActionBar
 class ActionButton(tk.Button):
     def __init__(self, side, *args, **kwargs):
-        tk.Button.__init__(self, *args, **kwargs, bg = COLOURS["la"])
+        tk.Button.__init__(self,
+                           *args,
+                           **kwargs,
+                           bg = COLOURS["la"],
+                           highlightthickness = 0)
         self.pack(side = side, padx = (((ABH - 44) // 2) * (side == tk.LEFT),
                                        ((ABH - 44) // 2) * (side == tk.RIGHT),
                                        ))
@@ -104,11 +108,14 @@ class View(tk.Frame):
                                            command = self.back)
         else:
             self.master.title(strings["Ludo"])
+            self.master.protocol("WM_DELETE_WINDOW", self.destroyView)
+            if (name == "nt"):
+                self.master.iconbitmap("res/drawables/icon.ico")
             self.master.geometry(W_DIMS)
         self.isDestroyed = False
         self.place(relwidth = 1, relheight = 1)
 
-    #every View with
+    #every View that uses multiple columns grid calls this
     def cSpan(self, columns):
         self.actionBar.grid_configure(columnspan = columns)
 
@@ -123,6 +130,24 @@ class View(tk.Frame):
         for i in self.textViews:
             i[1].config(text = strings[i[0]])
 
+    #gives time to broadcastReceivers to stop updating screen
+    #in the safest and the most elegant way
+    def fadeOut(self, alpha = 1.0):
+        alpha -= settings["fps"] / 25
+        if(alpha > 0):
+            self.master.attributes("-alpha", alpha)
+            self.after(40, lambda: self.fadeOut(alpha))
+        else:
+            self.master.destroy()
+
+    def destroyView(self):
+        for view in filter(lambda w: (issubclass(type(w), View)),
+                           self.winfo_children()):
+            view.destroyView()
+        if(type(self.master) is tk.Tk):
+            self.after(40, self.fadeOut)
+        else:
+            self.isDestroyed = True
 
 #Menus that lead to other Views
 class MenuView(View):
@@ -185,7 +210,9 @@ class SelectBotFrame(tk.Frame):
                                           width = 15,
                                           text = strings["Browse"],
                                           command = self.browse,
+                                          activebackground = botId,
                                           anchor = tk.CENTER,
+                                          highlightthickness = 0,
                                           bg = botId,
                                           fg = fgc)
             self.browseButton.grid(row = 1, column = 0)
@@ -203,7 +230,7 @@ class SelectBotFrame(tk.Frame):
             self.module[0] = path.split("/")[-1][:-3][:14]
             self.module[1] = path
             self.var.set(self.module[0])
-       
+
 
 
 #View in which user picks bots for match
@@ -233,6 +260,7 @@ class SelectBotsView(View):
                 nobRadioButton = tk.Radiobutton(master = self.actionBar,
                                                 variable = self.numberOfBots,
                                                 value = 2**i,
+                                                highlightthickness = 0,
                                                 text = str(2**i),
                                                 image = images["transparent"],
                                                 height = 40, \
@@ -410,7 +438,7 @@ class BoardStatesLog(object):
         self.currentState[0][r][c].update(kwargs)
 
     #similar to ucl, just for player stats displays
-    def ubl(self, playerIndex, frameIndex, args): 
+    def ubl(self, playerIndex, frameIndex, args):
         indices = playerIndex, frameIndex
         for i in range(len(self.bbfsLog[-1])):
             if(self.bbfsLog[-1][i][0] == indices):
@@ -422,7 +450,7 @@ class BoardStatesLog(object):
                  args,
                  self.currentState[1][playerIndex][frameIndex]))
         self.currentState[1][playerIndex][frameIndex] = args
-        
+
     #marks the end of a state
     def expand(self):
         self.bbfsLog.append([])
@@ -491,7 +519,7 @@ class BoardView(View):
         if(pos < 0):
             self.players[playerIndex]["pos"][pieceIndex] = \
                 BoardView.HOMES[playerIndex][-(pos + 1)]
-        else: 
+        else:
             self.players[playerIndex]["pos"][pieceIndex] = self.path[pos - 1]
         if(pos == core.convertPosition(1, playerIndex, 0)):
             self.log.ucl(BoardView.YARDS[playerIndex][pieceIndex],
@@ -536,7 +564,7 @@ class BoardView(View):
             self.log.ubl(playerIndex, 0, (progress + piecePos, 170))
             #print(self.players[playerIndex])
             self.log.expand()
-    
+
     #removes piece from board after it's eaten
     def remove(self, args):
         playerIndex = args[3]
@@ -575,19 +603,19 @@ class BoardView(View):
         print("Game over:", arg[0])
     def pause(self):
         self.paused = not(self.paused)
-        self.buttons["pause"].config(image = images["resume" 
-                                                    if self.paused else 
+        self.buttons["pause"].config(image = images["resume"
+                                                    if self.paused else
                                                     "pause"])
     def changeSpeed(self, acc):
         self.fps += acc * 2
         if(self.fps == acc): self.log.changeStep()
         if(abs(self.fps) > 23):
             self.buttons["ff"
-                         if self.fps > 0 else 
+                         if self.fps > 0 else
                          "fb"].config(state = tk.DISABLED)
         self.buttons["ff" if acc < 0 else "fb"].config(state = tk.NORMAL)
     def findPath(color = 0):
-        def nextTuple(previous, direction): 
+        def nextTuple(previous, direction):
             return (previous[0] + direction[0], previous[1] + direction[1])
         DIRECTIONS = BoardView.DIRECTIONS
         L = [BoardView.START_CELLS[color]]
@@ -749,21 +777,21 @@ class CustOptionMenu(tk.OptionMenu):
         self["menu"].delete(0, 'end')
         for option in newOptions:
             self["menu"].add_command(label = strings[option],
-                                     command = tk._setit(self.comVar, 
+                                     command = tk._setit(self.comVar,
                                                          strings[option]))
             self.getOption[strings[option]] = option
-            
+
     def set(self, value):
         self.comVar.set(value)
     #overrides the function that returns translated version of option and
     #returns basic version of selected option e.g. "Croatian" -> "hr"
     def get(self):
         return self.getOption[self.comVar.get()]
-    
+
     #gets str value of selected variable, like in CustomScale
     def getStr(self):
         return self.get()
-        
+
 
 class SettingsView(View):
     def __init__(self, viewName, nextViewName, intent, *args, **kwargs):
@@ -790,7 +818,7 @@ class SettingsView(View):
                          *[(0, 10) for i in range(4)])
         assert len(self.svKeys) == len(self.svValues)
         #setting widgets, one for each setting
-        self.swidgets = dict() #sviđat' s'? :)
+        self.swidgets = dict()
         for key, options in zip(self.svKeys, self.svValues):
             #Scales from pfp cluster don't have labels above
             if(key[:-1] != "ptsForPlace#"):
@@ -814,15 +842,13 @@ class SettingsView(View):
                                                  from_ = options[0],
                                                  to = options[1])
                 self.swidgets[key].set(settings[key])
-                if(key[:-1] == "ptsForPlace#"):
-                    print()
             self.swidgets[key].pack()
         self.saveImage = images["save"]
         self.saveButton =  ActionButton(side = tk.RIGHT,
                                         master = self.actionBar,
                                         image = self.saveImage,
                                         command = self.saveSettings)
-    
+
     def updateTextViews(self):
         super(SettingsView, self).updateTextViews()
         for key, values in zip(self.svKeys, self.svValues):
@@ -943,8 +969,8 @@ class TournamentView(View):
             self.processes[i].start()
         self.focus_set()
         self.bind("<Control-s>", self.export)
-    
-    def receiveBroadcast(self, q):    
+
+    def receiveBroadcast(self, q):
         gameNumbers = [0] * len(self.matchFrames)
         gpm = settings["gpm"]
         totalGames = gpm * len(gameNumbers)
@@ -1039,14 +1065,14 @@ class MFPlayerInfo(object):
         self.index = index
         self.coords = []
         self.wins = 0
-        self.rank = 0 
+        self.rank = 0
     def updateLabel(self, NOGames):
         self.labels[2].config(text = "{:.2%}".format(self.wins / NOGames))
     def __ge__(self, other):
         return self.wins >= other.wins
     def __le__(self, other):
         return self.wins <= other.wins
-        
+
 #keeps track of match info and displays it
 class MatchFrame(tk.Frame):
     MARGIN = (64, 32)
@@ -1079,11 +1105,11 @@ class MatchFrame(tk.Frame):
         self.toplevel = tk.Toplevel(self)
         self.toplevel.resizable(False, False)
         self.toplevel.protocol("WM_DELETE_WINDOW", self.hideTopLevel)
-        self.canvas = tk.Canvas(self.toplevel, 
-                                width = self.CANVAS_DIMS[0], 
-                                height = self.CANVAS_DIMS[1], 
+        self.canvas = tk.Canvas(self.toplevel,
+                                width = self.CANVAS_DIMS[0],
+                                height = self.CANVAS_DIMS[1],
                                 bg = "#FFFFFF")
-        axes = self.canvas.create_line(self.MARGIN[0], 
+        axes = self.canvas.create_line(self.MARGIN[0],
                                        self.MARGIN[1],
                                        self.MARGIN[0],
                                        self.MARGIN[1] + self.GRAPH_DIMS[1],
@@ -1167,7 +1193,7 @@ class MatchFrame(tk.Frame):
                                            fill = players[0])
                     self.canvas.itemconfig(self.trendlines[i][2],
                                            text = players[i][1])
-   
+
     #converts game number to canvas coordinates
     def gtc(gameNumber = None, winNumber = None):
         if(gameNumber != None):
@@ -1224,7 +1250,7 @@ class MatchFrame(tk.Frame):
     def getPlayerInfos(self, indices = (0, 1, 2, 3)):
         return [self.mfpi[self.order[i]] for i in indices]
     def getTopPlayers(self, howMany = 2):
-        return [(self.mfpi[i].name, 
+        return [(self.mfpi[i].name,
                  self.mfpi[i].path,
                  self.mfpi[i].id) for i in range(howMany)]
     def getData(self):
@@ -1436,7 +1462,7 @@ class LeagueView(View):
         broadcastReceiverThread.start()
         self.focus_set()
         self.bind("<Control-s>", self.export)
-    
+
     def export(self, event):
         filename = strftime("%c").replace(' ', '_').replace(':', '-') + ".txt"
         data = []
@@ -1461,7 +1487,7 @@ class LeagueView(View):
                 file.write(mn)
                 file.write(self.matchFrames[i].getData())
                 file.write('\n\n')
-    
+
     def changeSort(self, event):
         col = event.widget.grid_info()["column"] - 1
         if(self.sortBy == col):
@@ -1473,7 +1499,7 @@ class LeagueView(View):
             for i in self.lvpi:
                 i.compAttr = col
         event.widget.config(relief = tk.RAISED if self.isDesc else tk.SUNKEN)
-            
+
     def receiveBroadcast(self, q):
         gamesTotal = len(self.matchFrames) * settings["gpm"]
         gameNumber = 0
@@ -1510,8 +1536,8 @@ class LeagueView(View):
             for i in self.processes:
                 if(i.is_alive()):
                     i.terminate()
-            
-                
+
+
 
 def isLight(color):
     rgb = [int(color[i:i+2], 16) for i in range(1, 7, 2)]
@@ -1549,8 +1575,8 @@ def load(fileName):
         for i in IMAGE_NAMES:
             images[i] = tk.PhotoImage(file = "res/drawables/" + str(i) +  ".png")
         return
-    global settings, strings, revStrings
-    with open("res/" + fileName + ".txt", "r") as file:
+    global settings, strings
+    with open("res/" + fileName + ".txt", "r", encoding = "utf-8") as file:
         for i in file:
             if(i[:-1]):
                 key, value = i[:-1].split("|")
@@ -1558,9 +1584,12 @@ def load(fileName):
                     settings[key] = int(value) if value.isdigit() else value
                 else:
                     strings[key] = value
-                    revStrings[value] = key
+
 def getView(viewKey, intent, currentView):
-    return VIEWS[viewKey][1](viewName = viewKey, nextViewName = VIEWS[viewKey][0], intent = intent, master = currentView)
+    return VIEWS[viewKey][1](viewName = viewKey,
+                             nextViewName = VIEWS[viewKey][0],
+                             intent = intent,
+                             master = currentView)
 
 IMAGE_NAMES = ["back", "fb", "ff", "pause", "play", "resume", "save", "transparent", "settings"] \
             + ["dice/" + str(i + 1) for i in range(6)] \
@@ -1592,7 +1621,6 @@ if(__name__ == "__main__"):
     settings = dict()
     strings = dict()
     images = dict()
-    revStrings = dict()
     load("settings")
     load("strings/" + settings["lang"])
     imageLoadingThread = Thread(target = load, args = ("images", ))
