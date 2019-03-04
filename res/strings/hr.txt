@@ -1,0 +1,42 @@
+Ludo|Èovjeèe, ne ljuti se
+Main Menu|Glavni izbornik
+Play|Igraj
+Info|Info
+Settings|Postavke
+Single Game|Jedna igra
+Tournament|Turnir
+League|Liga
+lang|Jezik
+mod|MIOC mod
+pp|Raspored igraèa
+gpm|Broj igara po susretu
+pfp|Broj bodova za mjesto
+hr|Hrvatski
+pmm|Procesuiranje više susreta
+en|Engleski
+Balanced|Uravnotežen
+Random|Nasumièan
+UserDefined|Fiksan
+Off|Iskljuèen
+On|Ukljuèen
+Save&Exit|Spremi i izaði
+importError|Neuspješan import datoteke. Molimo, ažurirajte Python ili kopirajte bota u trenutnu mapu i koristite gornji padajuæi izbornik.
+Progress|Napredak
+6s|Šestice
+Ate|Pojeo
+Eaten|Pojeden
+Pcs|Fig
+Times|Put(a)
+Browse|Traži
+BotName|Ime bota
+Wins|Pobjede
+Pts|Bodovi
+AvgPos|Prosj rank
+fps|Brzina osvježavanja (fps)
+score|Rezultat
+criterion|Kriterij
+winners|Pobjednici
+banner|Èestitke! Pobjednici:
+crit|Kriterij
+export|Spremi
+infoView|Opæe informacije:NNN - Ovaj program je napravljen za testiranje i usporedbu botova za igru "Èovjeèe ne ljuti se" (upute za botove su u podmapi ./res).NNN - Botovi se mogu natjecati na tri naèina: Jedna igra, Turnir i Liga. "Jedna igra" prikazuje ploèu. U Turniru i Ligi se botovi natjeèu u susretima (više igara) kako bi smanjili faktor sreæe. U Turniru broj igraèa mora biti 2^n,'n' je 2, 3, 4 ili 5. Djeluje kao klasièno doigravanje u kojemu uvijek prolaze dva najbolja. U Ligi je 16 igraèa kako bi svatko mogao igrati sa svakim jednak broj puta.NNN - Relativan položaj igtaèa može ostati fiksan, biti promijenjen nakon svakih 1/6 susreta ili sluèajnim odabirom nakon svake igre.NNN - Igra se može igrati u "MIOC mod" varijanti u kojoj figure u obliku slova moraju tvoriti rijeè "MIOC" u kuæici.PPPTehnièki detalji:NNN - Moguæe je u bilo kojem trenutku spremiti podatke o susretu pritiskom CTRL+S.NNN - Koriste se sve jezgre procesora osim jedne zbog bržeg procesiranja.

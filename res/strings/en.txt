@@ -1,0 +1,41 @@
+Ludo|Mensch ärgere Dich nicht
+Main Menu|Main Menu
+Play|Play
+Info|Info
+Settings|Settings
+Single Game|Single Game
+Tournament|Tournament
+League|League
+lang|Language
+mod|MIOC mod
+pp|Player positioning
+gpm|Games per match
+pfp|Points for position
+hr|Croatian
+en|English
+Balanced|Balanced
+Random|Random
+UserDefined|User defined
+Off|Off
+On|On
+Save&Exit|Save and Exit
+importError|Unsuccessful file import. Please update Python or copy the bot in this directory and use OptionMenu above.
+Progress|Progress
+6s|6s
+Ate|Ate
+Eaten|Eaten
+Pcs|Pieces
+Times|Times
+Browse|Browse
+BotName|Bot name
+Wins|Wins
+Pts|Points
+AvgPos|Avg rank
+fps|Frames per second
+score|Score
+criterion|Criterion
+winners|Winners
+banner|Congratulations! Winners:
+crit|Criterion
+export|Export
+infoView|General Info:NNN - This program is designed for testing and comparing bots for "Mensch, argere dich nicht" game (bots' requirements in pdf in ./res subfolder).NNN - The bots can compete in three modes: Single game, Tournament and League. Single game displays board. In Tournament and League modes bots compete in matches (multiple games) to reduce factor of luck and compare programmer's strategies. In Tournament mode number of players has to be a 2^n, 'n' is 2, 3, 4 or 5. It behaves like a classic knockout stage where the best two players from a match go the next phase. League mode has 16 players so everyone can play the same number of matches against one another.NNN - Relative players' order can remain user defined or can be changed every 1/6th of a match or randomly after each game.NNN - The game can be played in "MIOC mod" variant in which pieces have to be in specific order inside house for win.PPPTechnical details:NNN - You can save the match data at any time by pressing CTRL+S.NNN - All CPU cores except one are used for faster processing.
