@@ -1,3 +1,3 @@
 # CovjeceNeLjutiSe
-Projekt za skolu, pisano u Pythonu 3, s jednostavnim Tkinter suceljem.
-Kod nije najljepsi jer je prvi pokusaj objektnog programiranja u Pythonu.
+School project, main program for testing bots for game "Čovječe ne ljuti se".
+There is also UI for the program to get the most out of it without coding in both Croatian and English.
