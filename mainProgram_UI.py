@@ -984,6 +984,7 @@ class TournamentView(View):
         modules = []
         finishedMatches = set()
         while(sum(gameNumbers) < totalGames and not(self.isDestroyed)):
+          try:
             #if the game ended on refreshPeriod, display has to be updated
             if(time() - self.lastRefreshed > self.rp):
                 for i in self.matchFrames:
@@ -1027,16 +1028,22 @@ class TournamentView(View):
                             self.processes[i].start()
                             matchIDs.clear()
                             modules.clear()
+          except TclError:
+            self.terminateProcesses()
         #often last game doesn't end on refreshPeriod, so last matchFrame
         #has to be updated at the end manually regardless of rp
         if(not(self.isDestroyed)):
             self.matchFrames[0].updateDisplay()
+        self.terminateProcesses()
+
+    def terminateProcesses(self):
         for i in self.processes:
             try:
                 if(i.is_alive()):
                     i.terminate()
             except ValueError:
                 continue
+    
     def export(self, event):
         filename = strftime("%c").replace(' ', '_').replace(':', '-') + ".txt"
         with open(filename, 'w') as file:
@@ -1518,6 +1525,7 @@ class LeagueView(View):
         gameNumber = 0
         #receiving game results
         while(gameNumber < gamesTotal and not(self.isDestroyed)):
+          try:
             matchID, winner = q.get()
             self.matchFrames[matchID].newWin(winner)
             gameNumber += 1
@@ -1537,6 +1545,8 @@ class LeagueView(View):
                         j.labels[k].grid_configure(row = i + 1)
                 #rearrange the player frames and update info
                 self.lastRefreshed = time()
+          except TclError:
+            self.terminateProcesses()
         #closing the processes and updating matchFrames if needed
         if(not(self.isDestroyed)):
             for i in self.processes:
@@ -1546,9 +1556,12 @@ class LeagueView(View):
             for mf in self.matchFrames:
                 mf.updateDisplay()
         else:
-            for i in self.processes:
-                if(i.is_alive()):
-                    i.terminate()
+            self.terminateProcesses()
+            
+    def terminateProcesses(self):
+        for i in self.processes:
+            if(i.is_alive()):
+                i.terminate()
 
     def back(self):
         for mf in self.matchFrames:
