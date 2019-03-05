@@ -79,9 +79,9 @@ class ActionButton(tk.Button):
     def __init__(self, side, *args, **kwargs):
         tk.Button.__init__(self,
                            *args,
-                           **kwargs,
                            bg = COLOURS["la"],
-                           highlightthickness = 0)
+                           highlightthickness = 0,
+                           **kwargs)
         self.pack(side = side, padx = (((ABH - 44) // 2) * (side == tk.LEFT),
                                        ((ABH - 44) // 2) * (side == tk.RIGHT),
                                        ))
@@ -358,7 +358,7 @@ class BoardStat(tk.LabelFrame):
 #One BoardBotFrame for every player in BoardView
 class BoardBotFrame(tk.Frame):
     def __init__(self, botInfo, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs, bd = 1, relief = tk.RIDGE)
+        tk.Frame.__init__(self, *args, bd = 1, relief = tk.RIDGE, **kwargs)
         self.grid_propagate(0)
         self.nameLabel = tk.Label(self,
                                   text = botInfo[0],
@@ -742,8 +742,8 @@ class CustomLabel(tk.Label):
     def __init__(self, *args, **kwargs):
         tk.Label.__init__(self,
                          *args,
-                         **kwargs,
-                         font = FONTS["smaller"])
+                         font = FONTS["smaller"],
+                         **kwargs)
         self.config(text = kwargs["text"] + ':')
 
 class CustomScale(tk.Scale):
@@ -805,7 +805,10 @@ class SettingsView(View):
                        "mod",
                        "gpm",
                        "fps",
-                       *["ptsForPlace#" + str(i + 1) for i in range(4)])
+                       "ptsForPlace#1",
+                       "ptsForPlace#2",
+                       "ptsForPlace#3",
+                       "ptsForPlace#4")
         self.labels = []
         #options for a setting: if tuple contains string, setting is displayed
         #using tk.OptionMenu and that string has to be in strings dict.
@@ -815,7 +818,10 @@ class SettingsView(View):
                          ("On", "Off"),
                          (1, 10000),
                          (1, 25),
-                         *[(0, 10) for i in range(4)])
+                         (0, 10),
+                         (0, 10),
+                         (0, 10),
+                         (0, 10))
         assert len(self.svKeys) == len(self.svValues)
         #setting widgets, one for each setting
         self.swidgets = dict()
@@ -1085,7 +1091,7 @@ class MatchFrame(tk.Frame):
     CANVAS_DIMS = (GRAPH_DIMS[0] + 2 * MARGIN[0],
                    GRAPH_DIMS[1] +  2 * MARGIN[1])
     def __init__(self, players, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs, bd = 1, relief = tk.RIDGE)
+        tk.Frame.__init__(self, *args, bd = 1, relief = tk.RIDGE, **kwargs)
         #storing player info
         self.mfpi = [None for i in range(len(players))]
         self.toplevelDisplayed = False
@@ -1165,7 +1171,8 @@ class MatchFrame(tk.Frame):
                                 fill = self.mfpi[i].id,
                                 width = 2),
                             self.canvas.create_line(
-                                *MatchFrame.gtc(0, self.mfpi[i].wins),
+                                MatchFrame.gtc(0, None),
+                                MatchFrame.gtc(None, self.mfpi[i].wins),
                                 self.mfpi[i].coords[-2],
                                 self.mfpi[i].coords[-1],
                                 fill = self.mfpi[i].id,
@@ -1244,7 +1251,8 @@ class MatchFrame(tk.Frame):
                 self.canvas.coords(tl[0],
                                    *self.mfpi[i].coords)
                 self.canvas.coords(tl[1],
-                                   *MatchFrame.gtc(0, wins_i),
+                                   MatchFrame.gtc(0, None),
+                                   MatchFrame.gtc(None, wins_i),
                                    self.mfpi[i].coords[-2],
                                    self.mfpi[i].coords[-1])
                 self.canvas.coords(tl[2],
