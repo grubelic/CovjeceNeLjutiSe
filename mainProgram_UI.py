@@ -1052,6 +1052,11 @@ class TournamentView(View):
                                   r,
                                   j)
 
+    def back(self):
+        for mf in self.matchFrames:
+            mf.toplevelDisplayed = False
+        super(TournamentView, self).back()
+
 class MFPlayerInfo(object):
     def __init__(self, master, player, index):
         self.name, self.path, self.id = player
@@ -1445,10 +1450,10 @@ class LeagueView(View):
         #to avoid string comparison in matchHandler
         ppToInt = SETTINGS_PP.index(settings["pp"])
         for i in range(self.availableCores):
-            kw = [dict(modules = [intent[LeagueView.GROUPS[k][j]][1]
-                                         for j in range(4)],
+            kw = [dict(modules = [p.path for p in \
+                                  self.matchFrames[k].getPlayerInfos()],
                        MIOCmod = settings["mod"] == "On")
-                       for k in range(len(matchIDs[i]))]
+                       for k in matchIDs[i]]
             self.processes.append(multiprocessing.Process(
                 target = matchHandler,
                 args = (q,
@@ -1536,6 +1541,11 @@ class LeagueView(View):
             for i in self.processes:
                 if(i.is_alive()):
                     i.terminate()
+
+    def back(self):
+        for mf in self.matchFrames:
+            mf.toplevelDisplayed = False
+        super(LeagueView, self).back()
 
 
 
